@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,13 +46,23 @@ public class HtmlToText {
             //get contents of the book
             Element element = document.getElementById("i_apologize_for_the_soup");
             if (element != null) {
+                String titulo = getTitulo(document);
+                if(StringUtils.isBlank(titulo)){
+                    return;
+                }
+                
+                String capitulo = getCapitulo(document, titulo);
+                if(StringUtils.isBlank(capitulo)){
+                    return;
+                }
+                
                 if (!element.getElementsByTag("audio").isEmpty()) {
                     //remove audio
                     element.getElementsByTag("audio").forEach(e -> e.remove());
                 }
 
                 //create new file txt
-                File fileTxt = new File(path.getAbsolutePath() + ".txt");
+                File fileTxt = new File("./result_books/"+titulo +"/"+capitulo+ ".txt");
                 //save clean content in txt
                 FileUtils.writeByteArrayToFile(fileTxt, element.text().getBytes());
                 
@@ -60,6 +71,20 @@ public class HtmlToText {
         } catch (IOException ex) {
             System.out.println(ex.toString());
         }
+    }
+
+    private String getCapitulo(Document document, String titulo) {
+        String capitulo = document.select("#page_content > header > h4").text();
+        capitulo = capitulo.replaceAll("[\\W]", " ");
+        capitulo = capitulo.trim().replace(" ", "_");
+        return capitulo;
+    }
+
+    private String getTitulo(Document document) {
+        String titulo = document.select("#page_content > header > h2 > a").text();
+        titulo = titulo.replaceAll("[\\W]", " ");
+        titulo = titulo.trim().replace(" ", "_");
+        return titulo;
     }
 
     /**
